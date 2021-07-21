@@ -6,11 +6,9 @@
   # Hyperparameters
   η::Number = 0.1
   α::Union{Number, Nothing} = 0.9
-  num_iters::Integer = 100
 
-  # Variables
+  # Momentum variable
   θ₋ = nothing
-  iter = 0
 end
 
 function step!(opt::GDOptimizer, x)::Nothing
