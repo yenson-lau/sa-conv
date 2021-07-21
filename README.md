@@ -7,4 +7,3 @@ Based on the paper ["On the Relationship between Self-Attention and Convolutiona
 ## To-do
 
 * Finish going through the paper and devise a deconvolution experiment
-* Improve `utils/GradientDescent.jl` to take in `kwargs...` for batching instead of hard argument

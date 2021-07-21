@@ -11,14 +11,20 @@
   θ₋ = nothing
 end
 
-function step!(opt::GDOptimizer, x)::Nothing
+function step!(opt::GDOptimizer; grad_kwargs...)::Nothing
   ω = if isa(opt.α, Nothing) || isa(opt.θ₋, Nothing)
     opt.θ
   else
     opt.θ + opt.α * (opt.θ - opt.θ₋)
   end
 
+  grad = if length(grad_kwargs) > 0
+    opt.grad_θx(ω; grad_kwargs)
+  else
+    opt.grad_θx(ω)
+  end
+
   opt.θ₋ = opt.θ
-  opt.θ = ω - opt.η * opt.grad_θx(ω, x)
+  opt.θ = ω - opt.η * grad
   return
 end

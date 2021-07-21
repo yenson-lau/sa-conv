@@ -9,7 +9,7 @@ include("../utils/GradientDescent.jl");
 k, n, θ, N = 5, 50, 0.2, 100
 Random.seed!(1234)
 a₀ = collect(1:k) * 1.
-X₀ = (rand(n, N) .<= θ) .* 1
+X₀ = (rand(n, N) .<= θ) .* 1.
 # X₀ = zeros(n, N);  X₀[1,:] .= 1;  X₀
 
 function ⋆(a::Vector, X::Matrix)::Matrix
@@ -53,7 +53,7 @@ nz(A; thresh=1e-5) = A .* (abs.(A).>thresh)
 # A = randn(k)      # recover kernel vector a₀
 A = randn(n, n)   # recover toeplitz matrix A₀
 opt = GDOptimizer(
-  grad_θx = (A,_) -> ∇ℒ(A, X₀)[1],
+  grad_θx = A -> ∇ℒ(A, X₀)[1],
   θ = A,
   η = 0.001,
   α = 0.9
@@ -62,7 +62,7 @@ opt = GDOptimizer(
 tick();
 for i ∈ 1:1000
   global opt, A, A₀
-  step!(opt, nothing)
+  step!(opt)
   A = opt.θ
 
   if i ∈ [1:10;] .* 10^Integer(floor(log10(i)))

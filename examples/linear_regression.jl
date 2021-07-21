@@ -22,7 +22,7 @@ loss(x) = 1/2 * sum((A*x .- y).^2);
 η = 1/norm(A)
 
 opt = GDOptimizer(
-  grad_θx = (x,_) -> ∇loss(x),
+  grad_θx = ∇loss,
   θ = x̂,
   η = η,
   α = 0.9
@@ -31,7 +31,7 @@ opt = GDOptimizer(
 tick();
 for i ∈ 1:1000
   global opt, x̂
-  step!(opt, nothing);  x̂ = opt.θ
+  step!(opt);  x̂ = opt.θ
   # x̂ = x̂ - η*∇loss(x̂)
 
   if i%100 == 0
