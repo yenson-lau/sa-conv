@@ -6,9 +6,9 @@ using Random, Statistics
 using TickTock
 include("../utils/GradientDescent.jl")
 
-Random.seed!(1234)
-
+# Generate data
 m, n = 2000, 1000;
+Random.seed!(1234)
 x₀, A = randn(n)/sqrt(n), randn(m, n)/sqrt(m);
 y = A*x₀;
 
