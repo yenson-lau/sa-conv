@@ -5,16 +5,16 @@ k, n, θ = 5, 50, 0.1
 
 a₀ = collect(1:k) * 1.
 x₀ = (rand(n) .<= θ) * 1.
-x₀ = zeros(n);  x₀[1] = 1
+# x₀ = zeros(n);  x₀[1] = 1
 
-conv(a, x) = NNlib.conv(
-  reshape(x, :,1,1), reshape(a, :,1,1);
-  pad=k-1
-)[:,1,1]
-y = conv(a₀, x₀)
+function ⋆(a::Vector, x::Vector)::Vector
+  return NNlib.conv(reshape(x, :,1,1), reshape(a, :,1,1); pad=k-1)[:,1,1]
+end
 
-# plot(x₀, line=:stem, marker=:dot, label="x₀")
-# plot!(y, line=:stem, marker=:dot, label="y")
+y = a₀ ⋆ x₀
+
+# plot(x₀, line=:stem, marker=:dot, label="x₀", markersize=2)
+# plot!(y, line=:stem, marker=:dot, label="y", markersize=2)
 
 function toeplitz(a::Vector, sz::Integer)::Matrix
   @assert sz >= length(a) "matrix size sz must be geq to size(a)"
@@ -27,8 +27,11 @@ function toeplitz(a::Vector, sz::Integer)::Matrix
   return T[1:sz, :]
 end
 
-ℒ(a::Vector, x::Vector) = sum((conv(a, x) - y).^2)/2
-ℒ(A::Matrix, x::Vector) = sum((A*[x; zeros(k-1)] - y).^2)/2
+function ⋆(A::Matrix, x::Vector)::Vector
+  return A*[x; zeros(k-1)]
+end
+
+ℒ(a, x) = sum((a ⋆ x - y).^2)/2
 ∇ℒ(a, x) = gradient(ℒ, a, x)
 
 A = toeplitz(a₀, n+k-1)
