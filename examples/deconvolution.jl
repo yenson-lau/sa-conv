@@ -12,36 +12,36 @@ a₀ = collect(1:k) * 1.
 X₀ = (rand(n, N) .<= θ) .* 1.
 # X₀ = zeros(n, N);  X₀[1,:] .= 1;  X₀
 
-function ⋆(a::Vector, X::Matrix)::Matrix
-  return NNlib.conv(reshape(X, size(X,1), :, size(X,2)),
-                    reshape(a, :,1,1);
-                    pad=k-1)[:,1,:]
+function ⋆⃑(u::Vector, V::Matrix; pad::Integer=k-1)::Matrix
+  return NNlib.conv(reshape(V, size(V,1), :, size(V,2)),
+                    reshape(u, :,1,1);
+                    pad=pad)[:,1,:]
 end
 
 # Matrix operations
-function toeplitz(a::Vector, sz::Integer)::Matrix
-  @assert sz >= length(a) "matrix size sz must be geq to size(a)"
-  a_padded = [a; zeros(sz - length(a) + sz)]
+function toeplitz(u::Vector, T_size::Integer)::Matrix
+  @assert sz >= length(u) "T_size must be geq to length(u)"
+  u_padded = [u; zeros(T_size - length(u) + T_size)]
 
-  T = zeros(length(a_padded), sz)
-  for (col, shift) ∈ enumerate(0:sz-1)
-    T[:,col] = circshift(a_padded, shift)
+  T = zeros(length(u_padded), T_size)
+  for (col, shift) ∈ enumerate(0:T_size-1)
+    T[:,col] = circshift(u_padded, shift)
   end
-  return T[1:sz, :]
+  return T[1:T_size, :]
 end
 
-function ⋆(A::Matrix, X::Matrix)::Matrix
-  A_ = [[A zeros(size(A,1), k-1)]; zeros(k-1, size(A,2)+k-1)]
-  X_ = [X; zeros(k-1, size(X,2))]
-  return A_*X_
+function ⋆⃑(U::Matrix, V::Matrix; pad::Integer=k-1)::Matrix
+  U_ = [[U zeros(size(U,1), pad)]; zeros(pad, size(U,2)+pad)]
+  V_ = [V; zeros(pad, size(V,2))]
+  return U_*V_
 end
 
 A₀ = toeplitz(a₀, n)
-Y = a₀ ⋆ X₀
+Y = a₀ ⋆⃑ X₀
 # plot(X₀[:,1], line=:stem, marker=:dot, label="x₀", markersize=2)
 # plot!(Y[:,1], line=:stem, marker=:dot, label="y", markersize=2)
 
-ℒ(a, X) = sum((a ⋆ X - Y).^2)/2
+ℒ(a, X) = sum((a ⋆⃑ X - Y).^2)/2
 ∇ℒ(a, X) = gradient(ℒ, a, X)
 nz(A; thresh=1e-5) = A .* (abs.(A).>thresh)
 

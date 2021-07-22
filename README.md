@@ -7,3 +7,4 @@ Based on the paper ["On the Relationship between Self-Attention and Convolutiona
 ## To-do
 
 * Finish going through the paper and devise a deconvolution experiment
+* Build SA layer for 1D
