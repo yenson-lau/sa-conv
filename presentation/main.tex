@@ -4,6 +4,26 @@
 % Update right margin since font size is now 9pt
 \setbeamersize{text margin right=10mm} 
 
+% Adjust footline
+\makeatletter
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.28\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertshortauthor\expandafter\beamer@ifempty\expandafter{\beamer@shortinstitute}{}{~~(\insertshortinstitute)}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.48\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.24\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex} 
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
 % Itemization settings
 \usepackage{xpatch}
 \xpatchcmd{\itemize}
@@ -71,7 +91,7 @@
 \vspace{.15in}
 \noindent\fbox{
 \parbox{0.85\textwidth}{
-    \textbf{Main theorem.} \emph{A {\em multi-head self-attention} (MHSA) layer with $N_h$ heads of dimension $D_h$ each, final output dimension $D_{out}$, and a {\em relative positional encoding} of dimension $D_p\geq3$ can express any convolutional layer of kernel size $\sqrt{N_h}\times\sqrt{N_h}$ and $\min(D_h, D_{out})$ output channels.}
+    \textbf{Main theorem.} \emph{A {\em multi-head self-attention} (MHSA) layer with $N_h$ heads of dimension $D_h$ each, final output dimension $D_{out}$, and a {\em relative positional encoding} of dimension $D_p\geq3$ can express any 2D convolutional layer of kernel size $\sqrt{N_h}\times\sqrt{N_h}$ and $\min(D_h, D_{out})$ output channels.}
 }}
 \vspace{.2in}
 \end{center}
@@ -187,7 +207,6 @@ is the set of all shifts represented by a $K\times K$ kernel.
 \end{align}
 where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 
-\vspace{.1in}
 \item \emph{Relative positional encoding} instead considers the positional difference between the query pixel (pixel we compute the representation of) and the key pixel (pixel we attend to):
 \begin{align}
 \mb A^\text{rel}_{\mb q, \mb k} &= 
@@ -203,6 +222,20 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
     \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for the positional encoding.
 \end{itemize}
 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\begin{itemize}
+\item \textbf{Main theorem.} \emph{A {\em multi-head self-attention} (MHSA) layer with $N_h$ heads of dimension $D_h$ each, final output dimension $D_{out}$, and a {\em relative positional encoding} of dimension $D_p\geq3$ can express any 2D convolutional layer of kernel size $\sqrt{N_h}\times\sqrt{N_h}$ and $\min(D_h, D_{out})$ output channels.}
+
+\begin{center}
+    \includegraphics[width=.8\textwidth]{presentation/images/sa_as_conv.png}
+\end{center}
+\vspace{-.15in}
+
+\item \textit{Remark.} It is straightforward to extend this theorem to $K$-dimensional convolution by using a relative positional encoding of dimension $D_p\geq K+1$.
 \end{itemize}
 \end{frame}
 
