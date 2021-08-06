@@ -49,6 +49,8 @@
 \newcommand{\wrt}{w.r.t.\ }
 \newcommand{\eg}{e.g.\ }
 \newcommand{\eq}{\ =\ }
+\newcommand{\abs}[1]{\left\vert#1\right\vert}
+\newcommand{\norm}[1]{\left\Vert#1\right\Vert}
 
 \usepackage{amsmath}
 \usepackage{bm}
@@ -148,8 +150,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
 
 
 \newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
-\begin{frame}{Self-Attention}
-\framesubtitle{Relative positional encoding}
+\begin{frame}{Relative positional encoding}
 \begin{itemize}
 \item In {\em absolute encoding}, a fixed or learned vector $\bm P_{t,:}$ is assigned to each token $t$. Therefore, for a query token $q$ (the token to compute the representation of) and key token $k$ (the pixel we are attending to),
 \begin{align}
@@ -177,7 +178,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
     \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
 \end{itemize}
 
-\item Note the attention scores are now {\em shift equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
+\item The attention scores are now {\em translation equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
 \end{itemize}
 \end{frame}
 
@@ -241,11 +242,9 @@ is the set of all shifts represented by a $K\times K$ kernel.
 \begin{center}
     \includegraphics[width=.8\textwidth]{presentation/images/sa_as_conv.png}
 \end{center}
-\vspace{-.1in}
+\vspace{-.15in}
 
 \item The theorem is a consequence of two lemmas.
-
-% \item \textit{Remark.} It is straightforward to extend this theorem to $K$-dimensional convolution by using a relative positional encoding of dimension $D_p\geq K+1$.
 \end{itemize}
 \end{frame}
 
@@ -403,8 +402,7 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \end{frame}
 
 
-\begin{frame}{Experiments}
-\framesubtitle{Setup}
+\begin{frame}{Experimental Setup}
 \begin{itemize}
 \item \textbf{Baseline.} Standard ResNet18 on CIFAR-10
 
@@ -435,8 +433,7 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \end{frame}
 
 
-\begin{frame}{Experiments}
-\framesubtitle{Convergence / testing accuracy}
+\begin{frame}{Convergence / Testing Accuracy}
 \begin{columns}
 \begin{column}{0.43\textwidth}
   \begin{itemize}
@@ -453,24 +450,82 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \end{frame}
 
 
-\begin{frame}{Experiments}
-\framesubtitle{Do self-attention layers actually learn convolutions? Maybe.}
-\begin{columns}
-\begin{column}{0.43\textwidth}
-  \begin{itemize}
-    \item \textbf{ResNet converges faster:} Probably because SA's inductive bias is not as strong as ResNet, but may also be due to different optimization setup.
-    
-    \vspace{.1in}
-    \item SA models with more learnable parameters converge slower and ends up with lower testing accuracy.  
-  \end{itemize}
-\end{column}
-\begin{column}{0.55\textwidth} \centering
-  \includegraphics[width=\textwidth]{presentation/images/converge_test_acc.png}
-\end{column}
-\end{columns}
+\begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
+\begin{itemize}
+\item Recall that from Lemma 1, the critical assumption is
+\begin{equation*}
+    \mathrm{softmax}(\mb A^{(h)}_{\mb q,:})_{\mb k} 
+        = \bm 1_{\bm f(h) = \bm q - \bm k}, 
+        \quad \forall h.
+\end{equation*}
+If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\varDelta\in\Delta_K$ yields 
+\begin{equation*}
+    \mathrm{softmax}(\mb A^{\bm\varDelta}_{\mb q,:})_{\mb k} 
+        = \bm 1_{\bm \varDelta = \bm q - \bm k}, 
+        \quad \forall \bm\varDelta.
+\end{equation*}
+
+\item MHSA expresses a single convolution operation when attention probabilities are all elements of a {\em translation group}. For instance, this would also suffice:
+\begin{equation*}
+    \mathrm{softmax}(\mb A^{\bm\varDelta}_{\mb q,:})_{\mb k} 
+        = \tfrac1\tau\ \bm 1_{\abs{\bm \varDelta - (\bm q - \bm k)}\leq\tau},
+        \quad \forall \bm\varDelta.
+\end{equation*}
+
+\item Alternatively, if we remove some of the shifts from $\Delta_K$, the heads are still elements of a translation group and we just end up with {\em sparse} convolution.
+
+\item And if there were multiple distribution profiles in the attention probabilities, then MHSA can be seen as expressing a {\em mixture} of convolution operators.
+
+\item \textbf{Takeaway:} \emph{It's difficult to judge whether a MHSA layer has a preference for learning convolutional operators or not, especially when $N_h$ is small.}
+\end{itemize}
 \end{frame}
 
-\usebackgroundtemplate{%        declare background
+
+\begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
+\framesubtitle{Quadratic encoding}
+\begin{itemize}
+\item $N_h=9$ heads
+\begin{center}
+    \includegraphics[width=.75\textwidth]{presentation/images/quad_emb_9.png}
+\end{center}
+
+\item $N_h=16$ heads
+\begin{center}
+    \includegraphics[width=.75\textwidth]{presentation/images/quad_emb_16.png}
+\end{center}
+
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
+\framesubtitle{Learned relative positional encoding (w/o content)}
+\begin{center}
+    \includegraphics[width=.7\textwidth]{
+        presentation/images/learned_rel_emb_nocontent.png}
+    \vspace{-.1in}
+\end{center}
+\begin{itemize}
+\item Each layer seems to mostly learn one or two attention profiles. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
+\framesubtitle{Learned relative positional encoding with content}
+\begin{center}
+    \includegraphics[width=.68\textwidth]{
+        presentation/images/learned_rel_emb_content.png}
+    \vspace{-.1in}
+\end{center}
+\begin{itemize}
+\item Still demonstrates some of the behavior shown for the learned embeddings without content.
+\end{itemize}
+\end{frame}
+
+
+% Final slide
+\usebackgroundtemplate{ %       declare background
 \tikz[overlay,remember picture] \node[opacity=1, at=(current page.center)] {
    \includegraphics[height=\paperheight,width=\paperwidth]{presentation/images/l6_bottle_bc_1.jpg}};
 }
@@ -479,6 +534,6 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
     Thanks for listening!
 \end{textblock}
 \end{frame}
-\usebackgroundtemplate{ }    %% undeclare background
+\usebackgroundtemplate{ } %%    undeclare background
 
 \end{document}
