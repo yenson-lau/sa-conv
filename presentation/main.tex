@@ -108,7 +108,7 @@
   \mathrm{SA}(\mb X)_{t,:} \doteq \mathrm{softmax}(\mb A_{t,:})\mb X\mb W_{val},
 \end{equation}
 \begin{center}
-    \includegraphics[width=.7\textwidth]{images/softmax.PNG}
+    \includegraphics[width=.7\textwidth]{images/softmax.png}
 \end{center}
 \vspace{.1in}
 
@@ -155,13 +155,14 @@ Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $
 
 \vspace{.2in}
 \begin{center}
-    \includegraphics[width=.7\textwidth]{images/mhsa.PNG}
+    \includegraphics[width=.7\textwidth]{images/mhsa.png}
 \end{center}
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Self-Attention for Images}
+\framesubtitle{From 1D sequence to 2D}
 \begin{itemize}
 \item Replace query and key tokens with pixels $\bm q, \bm k \in [W]\times[H]$, and the input with $\bm X \in \bb R^{W\times H\times D}$. Each attention score now associates a query and key pixel. 
 
@@ -178,7 +179,8 @@ and the MHSA retains the same form as Equation \eqref{mhsa}.
 
 \newcommand{\sqbrkt}[1]{\left[#1\right]}
 \newcommand{\ktwo}{\left\lfloor\frac K2\right\rfloor}
-\begin{frame}{Self-Attention for Images: Convolution}
+\begin{frame}{Self-Attention for Images}
+\framesubtitle{Convolution}
 \begin{itemize}
 \item Given an image tensor $\bm X \in \bb R^{W\times H\times D_{in}}$ and kernel tensor $\bm W \in \bb R^{K\times K \times D_{in} \times D_{out}}$,
 \begin{equation}
@@ -195,7 +197,8 @@ is the set of all shifts represented by a $K\times K$ kernel.
 
 
 \newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
-\begin{frame}{Relative Positional Encoding for Images}
+\begin{frame}{Self-Attention for Images}
+\framesubtitle{Relative positional encoding}
 \begin{itemize}
 \item In {\em absolute encoding}, a fixed or learned vector $\bm P_{\bm p,:}$ is assigned to each pixel $\bm p$. 
 \begin{align}
@@ -227,6 +230,7 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 
 
 \begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Main Theorem}
 \begin{itemize}
 \item \textbf{Main theorem.} \emph{A {\em multi-head self-attention} (MHSA) layer with $N_h$ heads of dimension $D_h$ each, final output dimension $D_{out}$, and a {\em relative positional encoding} of dimension $D_p\geq3$ can express any 2D convolutional layer of kernel size $\sqrt{N_h}\times\sqrt{N_h}$ and $\min(D_h, D_{out})$ output channels.}
 
@@ -242,7 +246,8 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 \end{frame}
 
 
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 1}
 \begin{itemize}
 \item \textbf{Lemma 1.} {\em Consider a MHSA layer consisting of $N_h = K^2$ heads, $D_h\geq D_{out}$ and let $\bm f:[N_h]\rightarrow\Delta_K$ be a bijective mapping of heads onto shifts. Further, suppose that for every head
 \begin{equation}
@@ -268,7 +273,8 @@ $$\bm W_{out}^{(h)} = \bm W[(h-1)*D_h+1 : hD_h\ , \ :\ ] \ \ \in\ \ \bb R^{D_h\t
 
 
 \newcommand{\row}[1]{_{#1,:}}
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 1}
 \begin{itemize}
 \item \textit{Proof of Lemma 1 (cont).} Consider a single "query" pixel from $\mathrm{MHSA}(\bm X)$:
 \begin{equation}
@@ -296,7 +302,8 @@ If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts us
 \end{frame}
 
 
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 1}
 \begin{itemize}
 \item Lemma 1 says that, with the right choice of relative positional encoding (and a very restricted set of attention parameters), {\em a MHSA layer is exactly equivalent to a convolutional layer}.
 
@@ -310,7 +317,8 @@ If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts us
 
 
 \newcommand{\brac}[1]{^{(#1)}}
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 2}
 \begin{itemize}
 \item \textbf{Lemma 2.} {\em There exists a relative encoding scheme $\{\bm r_{\bm \delta} \in \bb R^{D_p}\}_{\bm \delta\in\bb Z^2}$ with $D_p\geq 3$ and parameters $\bm W_{qry}$, $\bm W_{key}$, $\hat{\bm X}_{key}$, $\bm u$ with $D_p\leq D_k$ such that, for every $\bm\varDelta \in \Delta_K$ there exists some vector $\bm v(\bm\varDelta)$ that yields $\mathrm{softmax}(\bm A_{\bm q,:})_{\bm k}=1$ if $\bm k - \bm q = \bm\varDelta$, and zero otherwise.}
 
@@ -328,7 +336,7 @@ Since the desired attention probabilities \eqref{lemma1_assumption} from Lemma 1
 \vspace{.1in}
 This leaves only the final term. Setting $\hat{\bm W}_{key} = [\ \bm I_{D_p}\ ; \ \bm 0\ ] \in \mathbb R^{D_k\times D_p}$ (recall $D_p\leq D_k$) yields
 \begin{equation*}
-\mb A_{\mb q, \mb k} = \mb v_{1:D_p}^T\, \mb r_{\bm\delta}.
+    \mb A_{\mb q, \mb k} = \mb v_{1:D_p}^T\, \mb r_{\bm\delta}.
 \end{equation*}
 \end{itemize}
 \end{frame}
@@ -338,7 +346,8 @@ This leaves only the final term. Setting $\hat{\bm W}_{key} = [\ \bm I_{D_p}\ ; 
 \newcommand{\expalpha}[1]{e^{-\alpha#1}}
 \newcommand{\limalpha}{\lim_{\alpha\rightarrow\infty}}
 \newcommand{\vDelta}{\varDelta}
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 2}
 \begin{itemize}
 \item \textit{Proof of Lemma 2 (cont).} Recall that $\bm \delta \doteq \bm k - \bm q$. Now suppose some $\bm v, \bm r_{\bm \delta}$ could be found such that
 \begin{equation}
@@ -369,56 +378,90 @@ Setting $c=-\sqnorm{\bm\varDelta}$ recovers Equation \eqref{lemma2_attnreq} and 
 \end{frame}
 
 
-\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{frame}{Self-Attention as a Convolutional Layer}
+\framesubtitle{Lemma 2}
 \begin{itemize}
 \item The encoding scheme satisfying Lemma 2 is a {\em quadratic encoding scheme}, and is achieved by setting
 \begin{align}
     \mb v\brac h &\doteq -\alpha\brac h 
         (1, -2\varDelta_1\brac h, -2\varDelta_2\brac h), \nonumber \\
-    \mb r_{\bm \delta} &\doteq (\Vert\bm\delta\Vert^2,\ \delta_1,\ \delta_2), \\
+    \mb r_{\bm \delta} &\doteq (\Vert\bm\delta\Vert^2,\ \delta_1,\ \delta_2), 
+    \label{quad_encoding} \\
     \mb W_{qry} &= \mb W_{key} \doteq \bm 0, \nonumber \\
     \hat{\mb W}_{key} &\doteq \mb I. \nonumber
 \end{align}
-Here the learned parameters $\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ is fixed and expresses the relative shift between query and key pixels.
+Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ is fixed and expresses the relative shift between query and key pixels.
 
-\item Although the proof requires $\alpha\rightarrow\infty$ to satisfy the assumption \eqref{lemma1_assumption} of Lemma 1, finite precision arithmetic performs hard attention with sufficiently large enough $\alpha$. E.g. for Float32, set $\alpha\geq46$. 
+\item Although the proof requires $\alpha\rightarrow\infty$ to satisfy the assumption \eqref{lemma1_assumption} of Lemma 1, finite precision arithmetic performs hard attention with sufficiently large enough $\alpha$. E.g. for \texttt{Float32}, set $\alpha\geq46$. 
 
-\item The lemma, and thus the theorem, can be extended in a straightforward manner to cover $K$-dimensional convolutions, with $D_p=K-1$.
+\item The lemma, and thus the theorem, can be extended in a straightforward manner to cover $K$-dimensional convolutions, with $D_p=K+1$.
 \end{itemize}
 \end{frame}
 
 
-\begin{frame}{Setup}
+\begin{frame}{Experiments}
+\framesubtitle{Setup}
+\begin{itemize}
+\item \textbf{Baseline.} Standard ResNet18 on CIFAR-10
+
+\vspace{.02in}
+\item \textbf{Model.}
+\begin{itemize}
+    \item 6 MHSA layers (see Variations)
+    \item Use 2x2 invertible downsampling to reduce image size (attention coefficients scale quadratically to image size)
+    \item Fixed size representation of input image is the average pooling of the last layer representations, and fed to a linear classifier
+\end{itemize}
+
+\vspace{.02in}
+\item \textbf{Variations.} Different types of relative positional encoding
+\begin{equation*}
+    \mb A^{rel}_{\mb q, \mb k} = 
+        \mb X_{\mb q,:}^T \WW \mb X_{k,:}
+        + \mb X_{\mb q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\mb \delta}
+        + \mb u^T \mb W_{key} \mb X^T_{k,:}
+        + \mb v^T \hat{\mb W}_{key} \mb r_{\bm\delta}.
+    \vspace{-.12in}
+\end{equation*}
+\begin{itemize}
+    \item \textbf{SA with quadratic embedding:}  Retain final term only and fix the variables using Equation \eqref{quad_encoding}. The attention widths $\alpha^{(h)}$ and centers $\varDelta^{(h)}$ are still learnt.
+    \item \textbf{SA with learned embedding:} Retain final term only but learn $\mathbf v,\ \hat{\mathbf W}_{key},\ \mathbf r_{\bm \delta}$, with $D_p=D_{out}=400$. Set $D_h=D_{out}$.
+    \item \textbf{SA with content-based attention:} All terms retained (might actually be just first two terms) and all variables learnable. Same dimensions as above.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Experiments}
+\framesubtitle{Convergence / testing accuracy}
 \begin{columns}
-\begin{column}{0.6\textwidth}
+\begin{column}{0.43\textwidth}
   \begin{itemize}
-    \item {\bf Two dates:} present ($t=0$) and future ($t=1$)
-    \item World is fixed at $t=0$ but has $S$ states at $t=1$
-    \begin{itemize}
-      \item e.g. flipping a coin, prices go up or down, S=2
-    \end{itemize}
-    \vspace{1ex}
-
-    \item $p_j$: \ price of a security $j$ at $t=0$
-    \item $x^j_s$: \ payoff at $t=1$ for state $s$
-    \vspace{2ex}
-
-    \item Payoff vector for asset $j$
-    \begin{align*}
-      \bm x^j & \eq
-      \begin{bmatrix}
-        x^j_1 \\
-        x^j_2 \\
-        \vdots \\
-        x^j_S
-      \end{bmatrix}
-      \ \in \bb R^S
-    \end{align*}
+    \item \textbf{ResNet converges faster:} Probably because SA's inductive bias is not as strong as ResNet, but may also be due to different optimization setup.
+    
+    \vspace{.1in}
+    \item SA models with more learnable parameters converge slower and ends up with lower testing accuracy.  
   \end{itemize}
 \end{column}
+\begin{column}{0.55\textwidth} \centering
+  \includegraphics[width=\textwidth]{presentation/images/converge_test_acc.png}
+\end{column}
+\end{columns}
+\end{frame}
 
-\begin{column}{0.38\textwidth} \centering
-  \includegraphics[width=.85\textwidth]{images/one-period.PNG}
+
+\begin{frame}{Experiments}
+\framesubtitle{Do self-attention layers actually learn convolutions? Maybe.}
+\begin{columns}
+\begin{column}{0.43\textwidth}
+  \begin{itemize}
+    \item \textbf{ResNet converges faster:} Probably because SA's inductive bias is not as strong as ResNet, but may also be due to different optimization setup.
+    
+    \vspace{.1in}
+    \item SA models with more learnable parameters converge slower and ends up with lower testing accuracy.  
+  \end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth} \centering
+  \includegraphics[width=\textwidth]{presentation/images/converge_test_acc.png}
 \end{column}
 \end{columns}
 \end{frame}
