@@ -47,7 +47,6 @@
 \newcommand{\wrt}{w.r.t.\ }
 \newcommand{\eg}{e.g.\ }
 \newcommand{\eq}{\ =\ }
-\newcommand{\andsp}{\text{ \ \ and \ \ }}
 
 \usepackage{amsmath}
 \usepackage{bm}
@@ -104,9 +103,9 @@
 
 \begin{frame}{Self-Attention}
 \begin{itemize}
-\item Let $\bm X\in\bb R^{T\times D_{in}}$ be an input matrix consisting of $T$ tokens in $D_{in}$ dimensions. A self-attention layer $\text{SA}:D_{in}\rightarrow D_{out}$ is expressed as
+\item Let $\bm X\in\bb R^{T\times D_{in}}$ be an input matrix consisting of $T$ tokens in $D_{in}$ dimensions. A self-attention layer $\mathrm{SA}:D_{in}\rightarrow D_{out}$ is expressed as
 \begin{equation}
-  \text{SA}(\mb X)_{t,:} \doteq \text{softmax}(\mb A_{t,:})\mb X\mb W_{val},
+  \mathrm{SA}(\mb X)_{t,:} \doteq \mathrm{softmax}(\mb A_{t,:})\mb X\mb W_{val},
 \end{equation}
 \begin{center}
     \includegraphics[width=.7\textwidth]{images/softmax.PNG}
@@ -150,7 +149,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
 \begin{itemize}
 \item In practice it is beneficial to replicate the SA mechanism into multiple heads, by concatenating the output of $N_h$ heads of output dimension $D_h$ and projecting it to dimension $D_{out}$.
 \begin{equation}
-\text{MHSA}(\mb X) \doteq \text{hcat}_{h\in[N_h]}\big[\text{SA}_h(\mb X)\big]\mb W_{out} + \mb b_{out}. \label{mhsa}
+\mathrm{MHSA}(\mb X) \doteq \mathrm{hcat}_{h\in[N_h]}\big[\mathrm{SA}_h(\mb X)\big]\mb W_{out} + \mb b_{out}. \label{mhsa}
 \end{equation}
 Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $\bm  b_{out}\in\bb R^{D_{out}}$ is a bias term.
 
@@ -170,7 +169,7 @@ Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $
 
 \item Then, analogously to the 1D case,
 \begin{equation}
-\text{Self-Attention}(\mb A)_{\mb q, :} \ = \ \sum_{\mb k} \text{softmax}(\mb A_{\mb q, :})_{\mb k}\ \mb X_{\mb k, :} \ \mb W_{val},
+\mathrm{SA}(\mb A)_{\mb q, :} \ = \ \sum_{\mb k} \mathrm{softmax}(\mb A_{\mb q, :})_{\mb k}\ \mb X_{\mb k, :} \ \mb W_{val},
 \end{equation}
 and the MHSA retains the same form as Equation \eqref{mhsa}.
 \end{itemize}
@@ -183,7 +182,7 @@ and the MHSA retains the same form as Equation \eqref{mhsa}.
 \begin{itemize}
 \item Given an image tensor $\bm X \in \bb R^{W\times H\times D_{in}}$ and kernel tensor $\bm W \in \bb R^{K\times K \times D_{in} \times D_{out}}$,
 \begin{equation}
-\text{Conv}(\mb X)_{i,j,:} \ \doteq \ \sum_{(\delta_1, \delta_2) \in \Delta_K} \mb X_{i-\delta_1, j-\delta_2, :} \mb W_{\delta_1, \delta_2, :, :} + \mb b \ \ \in \ \mathbb R^{D_{out}},
+\mathrm{Conv}(\mb X)_{i,j,:} \ \doteq \ \sum_{(\delta_1, \delta_2) \in \Delta_K} \mb X_{i-\delta_1, j-\delta_2, :} \mb W_{\delta_1, \delta_2, :, :} + \mb b \ \ \in \ \mathbb R^{D_{out}},
 \end{equation}
 where
 $$\Delta_K \ \doteq \ \sqbrkt{-\ktwo, \dots, \ktwo} \times \sqbrkt{-\ktwo, \dots, \ktwo}$$
@@ -200,7 +199,7 @@ is the set of all shifts represented by a $K\times K$ kernel.
 \begin{itemize}
 \item In {\em absolute encoding}, a fixed or learned vector $\bm P_{\bm p,:}$ is assigned to each pixel $\bm p$. 
 \begin{align}
-\mb A^{\text{abs}}_{\mb q, \mb k} 
+\mb A^{abs}_{\mb q, \mb k} 
 \ &=\ (\mb X_{\mb q,:} + \mb P_{\mb q,:})\WW(\mb X_{\mb q,:} + \mb P_{\mb q,:})^T \nonumber
 \\ &=\ \mb X_{\mb q,:}\WW\mb X^T_{k,:} +\ \mb X_{\mb q,:}\WW\mb P^T_{k,:} 
 \\ &\qquad +\ \mb P_{\mb q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{\mb q,:}\WW\mb P^T_{k,:}, \nonumber
@@ -209,11 +208,12 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 
 \item \emph{Relative positional encoding} instead considers the positional difference between the query pixel (pixel we compute the representation of) and the key pixel (pixel we attend to):
 \begin{align}
-\mb A^\text{rel}_{\mb q, \mb k} &= 
-    \mb X_{\mb q,:}^T \WW \mb X_{k,:}
-    + \mb X_{\mb q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\mb \delta}
-    + \mb u^T \mb W_{key} \mb X^T_{k,:}
-    + \mb v^T \hat{\mb W}_{key} \mb r_{\delta}.
+    \mb A^{rel}_{\mb q, \mb k} &= 
+        \mb X_{\mb q,:}^T \WW \mb X_{k,:}
+        + \mb X_{\mb q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\mb \delta}
+        + \mb u^T \mb W_{key} \mb X^T_{k,:}
+        + \mb v^T \hat{\mb W}_{key} \mb r_{\bm\delta}.
+    \label{relposenc}
 \end{align}
 \vspace{-.15in}
 \begin{itemize}
@@ -233,9 +233,157 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 \begin{center}
     \includegraphics[width=.8\textwidth]{presentation/images/sa_as_conv.png}
 \end{center}
-\vspace{-.15in}
+\vspace{-.1in}
 
-\item \textit{Remark.} It is straightforward to extend this theorem to $K$-dimensional convolution by using a relative positional encoding of dimension $D_p\geq K+1$.
+\item The theorem is a consequence of two lemmas.
+
+% \item \textit{Remark.} It is straightforward to extend this theorem to $K$-dimensional convolution by using a relative positional encoding of dimension $D_p\geq K+1$.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{itemize}
+\item \textbf{Lemma 1.} {\em Consider a MHSA layer consisting of $N_h = K^2$ heads, $D_h\geq D_{out}$ and let $\bm f:[N_h]\rightarrow\Delta_K$ be a bijective mapping of heads onto shifts. Further, suppose that for every head
+\begin{equation}
+\mathrm{softmax}(\mb A^{(h)}_{\mb q,:})_{\mb k} = \begin{cases}
+    1 & \text{if } \mb f(h) = \mb q - \mb k,
+    \\ 0 & \text{otherwise}.
+    \end{cases} \label{lemma1_assumption}
+\end{equation}
+Then for any convolutional layer with a $K\times K$ kernel and $D_{out}$ output channels, there exists $\{\bm W_{val}^{(h)}\}_{h\in[N_h]}$ such that $\mathrm{MHSA}(\bm X) = \mathrm{Conv}(\bm X)$, for any kernel tensor $\bm W \in \bb R^{K\times K \times D_{in} \times D_{out}}$, and for all $\bm X\in\bb R^{W\times H\times D_{in}}$.}
+
+\vspace{.05in}
+\item \textit{Proof of Lemma 1.} Rewrite Equation \eqref{mhsa} as
+\begin{equation}
+    \mathrm{MHSA}(\mb X) = \mb b_{out} + 
+        \sum_{h\in[N_h]} \mathrm{softmax}(\mb A^{(h)})\ \mb X\ 
+        \underbrace{\mb W_{val}^{(h)}\ \mb W_{out}^{(h)}}_{\mb W^{(h)}}\ .
+    \vspace{-.1in}
+\end{equation}
+Here $\bm W_{val}^{(h)} \in \bb R^{D_{in}\times D_h}$ is the value matrix for head $h$, or in MATLAB notation,
+$$\bm W_{out}^{(h)} = \bm W[(h-1)*D_h+1 : hD_h\ , \ :\ ] \ \ \in\ \ \bb R^{D_h\times D_{out}}.$$
+\end{itemize}
+\end{frame}
+
+
+\newcommand{\row}[1]{_{#1,:}}
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{itemize}
+\item \textit{Proof of Lemma 1 (cont).} Consider a single "query" pixel from $\mathrm{MHSA}(\bm X)$:
+\begin{equation}
+    \mathrm{MHSA}(\mb X)\row {\mb q} = \mb b_{out} + 
+        \sum_{h\in[N_h]} \left( \sum_{\mb k\in [T]} 
+            \mathrm{softmax}(\mb A^{(h)}\row {\mb q})_{\mb k}\ \mb X\row{\mb k} 
+        \right) \mb W^{(h)} .
+\end{equation}
+The summand $\sum_{\mb k} \mathrm{softmax}(\mb A^{(h)}\row {\mb q})_{\mb k}\ \mb X\row{\mb k}$ is a weighted average on the rows of $\bm X$. 
+
+\item Applying the assumption from Equation \eqref{lemma1_assumption}, each of the softmax weights pick out a single row $\bm k = \bm q - \bm f(h)$:
+\begin{equation}
+    \mathrm{MHSA}(\mb X)\row {\mb q} = \mb b_{out} + 
+        \sum_{h\in[N_h]}  \mb X\row{\mb q - \mb f(h)} \mb W^{(h)} .
+\end{equation}
+
+If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts using $h\in[N_h]$, i.e. $\bm f([N_h]) = \Delta_K$. Therefore we can rewrite the expression as
+\begin{equation}
+    \mathrm{MHSA}(\mb X)\row {\mb q} = \mb b_{out} + 
+        \sum_{h\in[N_h]}  \mb X\row{\mb q - \mb f(h)} \mb W_{\mb f(h), :, :} 
+        = \mathrm{Conv}(\mb X)\row{\mb q}. 
+    \quad\qed
+\end{equation}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 1}
+\begin{itemize}
+\item Lemma 1 says that, with the right choice of relative positional encoding (and a very restricted set of attention parameters), {\em a MHSA layer is exactly equivalent to a convolutional layer}.
+
+\vspace{.1in}
+\item The number of linearly independent filters expressible by $\bm W$ is clearly limited by $\min(D_h, D_{out})$. Therefore, to express $D_h$ convolutional filters, it is best to simply let $D_{out} = N_hD_h$ and have $\bm W^{(h)}\in\bb R^{D_h\times D_h}$. 
+
+\vspace{.1in}
+\item There is a generalized version of this lemma in the Appendix of the paper that delves into the space of filters spannable for a given set of dimensions $D_h, N_h, D_{out}$, etc., for interested readers.
+\end{itemize}
+\end{frame}
+
+
+\newcommand{\brac}[1]{^{(#1)}}
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{itemize}
+\item \textbf{Lemma 2.} {\em There exists a relative encoding scheme $\{\bm r_{\bm \delta} \in \bb R^{D_p}\}_{\bm \delta\in\bb Z^2}$ with $D_p\geq 3$ and parameters $\bm W_{qry}$, $\bm W_{key}$, $\hat{\bm X}_{key}$, $\bm u$ with $D_p\leq D_k$ such that, for every $\bm\varDelta \in \Delta_K$ there exists some vector $\bm v(\bm\varDelta)$ that yields $\mathrm{softmax}(\bm A_{\bm q,:})_{\bm k}=1$ if $\bm k - \bm q = \bm\varDelta$, and zero otherwise.}
+
+\vspace{.1in}
+\item \textit{Proof of Lemma 2.} Start with the relative positional encoding of Equation \eqref{relposenc}:
+\begin{equation*}
+    \mb A^{rel}_{\mb q, \mb k} = 
+        \mb X_{\mb q,:}^T \WW \mb X_{k,:}
+        + \mb X_{\mb q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\mb \delta}
+        + \mb u^T \mb W_{key} \mb X^T_{k,:}
+        + \mb v^T \hat{\mb W}_{key} \mb r_{\bm\delta}.
+\end{equation*}
+Since the desired attention probabilities \eqref{lemma1_assumption} from Lemma 1 are independent of the input $\bm X$, set $\bm W_{key}=\bm W_{qry} = \bm 0$. 
+
+\vspace{.1in}
+This leaves only the final term. Setting $\hat{\bm W}_{key} = [\ \bm I_{D_p}\ ; \ \bm 0\ ] \in \mathbb R^{D_k\times D_p}$ (recall $D_p\leq D_k$) yields
+\begin{equation*}
+\mb A_{\mb q, \mb k} = \mb v_{1:D_p}^T\, \mb r_{\bm\delta}.
+\end{equation*}
+\end{itemize}
+\end{frame}
+
+
+\newcommand{\sqnorm}[1]{\Vert#1\Vert^2}
+\newcommand{\expalpha}[1]{e^{-\alpha#1}}
+\newcommand{\limalpha}{\lim_{\alpha\rightarrow\infty}}
+\newcommand{\vDelta}{\varDelta}
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{itemize}
+\item \textit{Proof of Lemma 2 (cont).} Recall that $\bm \delta \doteq \bm k - \bm q$. Now suppose some $\bm v, \bm r_{\bm \delta}$ could be found such that
+\begin{equation}
+    \mb A_{\mb q, \mb k} = -\alpha(\sqnorm{\bm{\delta - \varDelta}} + c) 
+    \label{lemma2_attnreq}
+\end{equation}
+so that the maximum score $-\alpha c$ is achieved when $\bm\delta = \bm\varDelta$, then
+\begin{align*}
+    \limalpha \text{softmax}(\mb A_{\mb q, :})_{\mb k} &\eq 
+        \limalpha\frac{\expalpha{(\sqnorm{\bm{\delta-\varDelta}}+c)}}{
+            \sum_{\bm\delta'\in\Delta_K}
+            \expalpha{(\sqnorm{\bm{\delta'-\varDelta}}+c)}
+        } \\ &\eq \frac{1_{\bm\delta=\bm\varDelta}}{
+            1 + \limalpha\sum_{\bm\delta'\neq \bm\delta}
+            \expalpha{\sqnorm{\bm{\delta'-\varDelta}}}
+        } = 1_{\bm\delta=\bm\varDelta}.
+\end{align*}
+
+\item Choosing $\bm v_{1:D_p} = -\alpha(1, -2\varDelta_1, -2\varDelta_2)$ and $\bm r_{\bm \delta} = (\Vert\bm \delta\Vert^2, \delta_1, \delta_2)$, yields
+\begin{align*}
+    \mb A_{\mb q, \bm k} &= 
+        \mb v_{1:D_p}^T\, \mb r_{\bm \delta}
+        \\ &= -\alpha(\sqnorm{\bm\delta} -2\vDelta_1\delta_1-2\vDelta_2\delta_2) 
+        \\ &= -\alpha(\sqnorm{\bm\delta-\bm\vDelta} - \sqnorm{\bm\vDelta}).
+\end{align*}
+Setting $c=-\sqnorm{\bm\varDelta}$ recovers Equation \eqref{lemma2_attnreq} and completes the proof. \qed
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Self-Attention as a Convolutional Layer: Lemma 2}
+\begin{itemize}
+\item The encoding scheme satisfying Lemma 2 is a {\em quadratic encoding scheme}, and is achieved by setting
+\begin{align}
+    \mb v\brac h &\doteq -\alpha\brac h 
+        (1, -2\varDelta_1\brac h, -2\varDelta_2\brac h), \nonumber \\
+    \mb r_{\bm \delta} &\doteq (\Vert\bm\delta\Vert^2,\ \delta_1,\ \delta_2), \\
+    \mb W_{qry} &= \mb W_{key} \doteq \bm 0, \nonumber \\
+    \hat{\mb W}_{key} &\doteq \mb I. \nonumber
+\end{align}
+Here the learned parameters $\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ is fixed and expresses the relative shift between query and key pixels.
+
+\item Although the proof requires $\alpha\rightarrow\infty$ to satisfy the assumption \eqref{lemma1_assumption} of Lemma 1, finite precision arithmetic performs hard attention with sufficiently large enough $\alpha$. E.g. for Float32, set $\alpha\geq46$. 
+
+\item The lemma, and thus the theorem, can be extended in a straightforward manner to cover $K$-dimensional convolutions, with $D_p=K-1$.
 \end{itemize}
 \end{frame}
 
@@ -274,7 +422,6 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 \end{column}
 \end{columns}
 \end{frame}
-
 
 
 \begin{frame}
