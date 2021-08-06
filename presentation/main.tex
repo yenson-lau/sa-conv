@@ -130,7 +130,7 @@ $$\mb W_{qry} \in \bb R^{D_{in}\times{D_k}}, \ \
 For simplicity, ignore residual connections, batch normalization or constant factors.
 
 \vspace{.1in}
-\item Note that $\bm A$ is {\em equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the token scores in $\bm A$. {\em This is not desired behavior.}
+\item Note that $\bm A$ is {\em permutation equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the token scores in $\bm A$. {\em This is not desired behavior.}
 \begin{itemize}
     \item e.g. "the cat ate the fish" means something very different to "the fish ate the cat"
 \end{itemize}
@@ -205,11 +205,12 @@ is the set of all shifts represented by a $K\times K$ kernel.
 \mb A^{abs}_{\mb q, \mb k} 
 \ &=\ (\mb X_{\mb q,:} + \mb P_{\mb q,:})\WW(\mb X_{\mb q,:} + \mb P_{\mb q,:})^T \nonumber
 \\ &=\ \mb X_{\mb q,:}\WW\mb X^T_{k,:} +\ \mb X_{\mb q,:}\WW\mb P^T_{k,:} 
-\\ &\qquad +\ \mb P_{\mb q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{\mb q,:}\WW\mb P^T_{k,:}, \nonumber
+\\ &\qquad +\ \mb P_{\mb q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{\mb q,:}\WW\mb P^T_{k,:}, \nonumber 
 \end{align}
 where $\bm q$ and $\bm k$ correspond to the query and key pixels.
 
 \item \emph{Relative positional encoding} instead considers the positional difference between the query pixel (pixel we compute the representation of) and the key pixel (pixel we attend to):
+\vspace{-.05in}
 \begin{align}
     \mb A^{rel}_{\mb q, \mb k} &= 
         \mb X_{\mb q,:}^T \WW \mb X_{k,:}
@@ -218,13 +219,14 @@ where $\bm q$ and $\bm k$ correspond to the query and key pixels.
         + \mb v^T \hat{\mb W}_{key} \mb r_{\bm\delta}.
     \label{relposenc}
 \end{align}
-\vspace{-.15in}
+\vspace{-.18in}
 \begin{itemize}
     \item Learnable vectors $\bm u$, $\bm v$ are unique for each head 
     \item Relative positional encoding $\bm r_{\bm \delta} \in \bb R^{D_p}$ depends only on the shift $\bm \delta \doteq \bm k -\bm q$, and is shared by all layers and heads.
-    \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for the positional encoding.
+    \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
 \end{itemize}
 
+\item Note the attention scores are now {\em shift equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
 \end{itemize}
 \end{frame}
 
