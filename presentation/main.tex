@@ -1,4 +1,6 @@
 \documentclass[9pt]{beamer}
+\usepackage[absolute,overlay]{textpos}
+\usepackage{tikz}
 \usetheme{Madrid}
 
 % Update right margin since font size is now 9pt
@@ -468,9 +470,15 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \end{columns}
 \end{frame}
 
-
+\usebackgroundtemplate{%        declare background
+\tikz[overlay,remember picture] \node[opacity=1, at=(current page.center)] {
+   \includegraphics[height=\paperheight,width=\paperwidth]{presentation/images/l6_bottle_bc_1.jpg}};
+}
 \begin{frame}
-\huge{Thanks!}
+\begin{textblock}{8}(1.8, 4.2) \raggedright \Huge 
+    Thanks for listening!
+\end{textblock}
 \end{frame}
+\usebackgroundtemplate{ }    %% undeclare background
 
 \end{document}
