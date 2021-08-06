@@ -127,12 +127,12 @@ the {\em attention scores}, and the softmax outputs as {\em attention probabilit
 $$\mb W_{qry} \in \bb R^{D_{in}\times{D_k}}, \ \ 
 \mb W_{key} \in \bb R^{D_{in}\times{D_k}},\ \text{ and } \ 
 \mb W_{val} \in \bb R^{D_{in}\times{D_{out}}}.$$
-For simplicity, ignore residual connections, batch normalization or constant factors.
+For simplicity, ignore residual connections, normalization or constant factors.
 
-\vspace{.1in}
+\vspace{.15in}
 \item Note that $\bm A$ is {\em permutation equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the token scores in $\bm A$. {\em This is not desired behavior.}
 \begin{itemize}
-    \item e.g. "the cat ate the fish" means something very different to "the fish ate the cat"
+    \item e.g. "the cat ate the fish" is very different from "the fish ate the cat"
 \end{itemize}
 
 \vspace{.1in}
@@ -141,6 +141,41 @@ For simplicity, ignore residual connections, batch normalization or constant fac
 A \doteq (\mb X + \mb P)\mb W_{qry}\mb W_{key}^T (\mb X + \mb P)^T,
 \end{equation}
 where the encoding matrix $\bm P$ has size $T\times D_{in}$.
+\end{itemize}
+\end{frame}
+
+
+\newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
+\begin{frame}{Self-Attention}
+\framesubtitle{Relative positional encoding}
+\begin{itemize}
+\item In {\em absolute encoding}, a fixed or learned vector $\bm P_{t,:}$ is assigned to each token $t$. Therefore, for a query token $q$ (the token to compute the representation of) and key token $k$ (the pixel we are attending to),
+\begin{align}
+    \mb A^{abs}_{q, k} 
+        \ &=\ (\mb X_{q,:} + \mb P_{q,:})\WW(\mb X_{q,:} + \mb P_{q,:})^T 
+        \nonumber
+        \\ &=\ \mb X_{q,:}\WW\mb X^T_{k,:} +\ \mb X_{q,:}\WW\mb P^T_{k,:} 
+        \\ &\qquad +\ \mb P_{q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{q,:}\WW\mb P^T_{k,:} \nonumber 
+\end{align}
+
+\item \emph{Relative positional encoding} instead considers the positional difference between the query and key tokens:
+\vspace{-.05in}
+\begin{align}
+    \mb A^{rel}_{q, k} &= 
+        \mb X_{q,:}^T \WW \mb X_{k,:}
+        + \mb X_{q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\delta}
+        + \mb u^T \mb W_{key} \mb X^T_{k,:}
+        + \mb v^T \hat{\mb W}_{key} \mb r_{\delta}.
+    \label{relposenc}
+\end{align}
+\vspace{-.18in}
+\begin{itemize}
+    \item The learnable vectors $\bm u$, $\bm v$ are unique for each head 
+    \item The relative positional encoding $\bm r_{\delta} \in \bb R^{D_p}$ depends only on the shift $\delta \doteq k -q$, and is shared by all layers and heads.
+    \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
+\end{itemize}
+
+\item Note the attention scores are now {\em shift equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
 \end{itemize}
 \end{frame}
 
@@ -172,7 +207,7 @@ Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $
 \begin{equation}
 \mathrm{SA}(\mb A)_{\mb q, :} \ = \ \sum_{\mb k} \mathrm{softmax}(\mb A_{\mb q, :})_{\mb k}\ \mb X_{\mb k, :} \ \mb W_{val},
 \end{equation}
-and the MHSA retains the same form as Equation \eqref{mhsa}.
+and relative positional encoding retains the same form as Equation \eqref{relposenc}. Similarly MHSA retains the same form as Equation \eqref{mhsa}.
 \end{itemize}
 \end{frame}
 
@@ -192,41 +227,6 @@ is the set of all shifts represented by a $K\times K$ kernel.
 
 \vspace{.1in}
 \item We depart from the original notation slightly by using the {\em unflipped} convolution. In the paper, the summand is flipped to $\bm X_{i+\delta_1, i+\delta_2,:} \bm W_{\delta_1, \delta_2,:,:}$. The theorem in the paper is not changed by this.
-\end{itemize}
-\end{frame}
-
-
-\newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
-\begin{frame}{Self-Attention for Images}
-\framesubtitle{Relative positional encoding}
-\begin{itemize}
-\item In {\em absolute encoding}, a fixed or learned vector $\bm P_{\bm p,:}$ is assigned to each pixel $\bm p$. 
-\begin{align}
-\mb A^{abs}_{\mb q, \mb k} 
-\ &=\ (\mb X_{\mb q,:} + \mb P_{\mb q,:})\WW(\mb X_{\mb q,:} + \mb P_{\mb q,:})^T \nonumber
-\\ &=\ \mb X_{\mb q,:}\WW\mb X^T_{k,:} +\ \mb X_{\mb q,:}\WW\mb P^T_{k,:} 
-\\ &\qquad +\ \mb P_{\mb q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{\mb q,:}\WW\mb P^T_{k,:}, \nonumber 
-\end{align}
-where $\bm q$ and $\bm k$ correspond to the query and key pixels.
-
-\item \emph{Relative positional encoding} instead considers the positional difference between the query pixel (pixel we compute the representation of) and the key pixel (pixel we attend to):
-\vspace{-.05in}
-\begin{align}
-    \mb A^{rel}_{\mb q, \mb k} &= 
-        \mb X_{\mb q,:}^T \WW \mb X_{k,:}
-        + \mb X_{\mb q,:}^T \mb W_{qry}^T\hat{\mb W}_{key} \mb r_{\mb \delta}
-        + \mb u^T \mb W_{key} \mb X^T_{k,:}
-        + \mb v^T \hat{\mb W}_{key} \mb r_{\bm\delta}.
-    \label{relposenc}
-\end{align}
-\vspace{-.18in}
-\begin{itemize}
-    \item Learnable vectors $\bm u$, $\bm v$ are unique for each head 
-    \item Relative positional encoding $\bm r_{\bm \delta} \in \bb R^{D_p}$ depends only on the shift $\bm \delta \doteq \bm k -\bm q$, and is shared by all layers and heads.
-    \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
-\end{itemize}
-
-\item Note the attention scores are now {\em shift equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
 \end{itemize}
 \end{frame}
 
@@ -409,13 +409,13 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \vspace{.02in}
 \item \textbf{Model.}
 \begin{itemize}
-    \item 6 MHSA layers (see Variations)
+    \item 6 MHSA layers. Each layer consists of a MHSA step, followed by dense, dropout and LayerNorm sublayers.
     \item Use 2x2 invertible downsampling to reduce image size (attention coefficients scale quadratically to image size)
     \item Fixed size representation of input image is the average pooling of the last layer representations, and fed to a linear classifier
 \end{itemize}
 
 \vspace{.02in}
-\item \textbf{Variations.} Different types of relative positional encoding
+\item \textbf{MHSA variations.} Different types of relative positional encoding
 \begin{equation*}
     \mb A^{rel}_{\mb q, \mb k} = 
         \mb X_{\mb q,:}^T \WW \mb X_{k,:}
