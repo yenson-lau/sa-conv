@@ -484,16 +484,31 @@ If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\varDe
 \begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
 \framesubtitle{Quadratic encoding}
 \begin{itemize}
-\item $N_h=9$ heads
+\item Here the attention probabilities are Gaussians shifted from origin $\bm q$, so a single convolution is expressed if they have the same width and different centers.
+
+\item The attention probabilities for each of the $N_h=9$ heads after training:
 \begin{center}
     \includegraphics[width=.75\textwidth]{presentation/images/quad_emb_9.png}
 \end{center}
 
-\item $N_h=16$ heads
+\item A significant portion of the heads have similar widths, esp. at lower layers. Higher layers have more varied widths. Notice that the centers tend to separate.
+
+\item Again, should we interpret this as a mixture of convolutions? Sparse convolutions? Convolutions with strides? Hard to say.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
+\framesubtitle{Quadratic encoding}
+\begin{itemize}
+\item $N_h=16$ heads. Similar to behavior with 9 heads, but now lower layers have groups of heads with small widths + a few heads with widely varying widths.
 \begin{center}
     \includegraphics[width=.75\textwidth]{presentation/images/quad_emb_16.png}
 \end{center}
 
+\item Non-isotropic Gaussians ($N_h=9$). Large variations in shapes and sizes, but perhaps useful for representing rotations?
+\begin{center}
+    \includegraphics[width=.75\textwidth]{presentation/images/non_iso_gaussian.png}
+\end{center}
 \end{itemize}
 \end{frame}
 
@@ -519,7 +534,10 @@ If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\varDe
     \vspace{-.1in}
 \end{center}
 \begin{itemize}
-\item Still demonstrates some of the behavior shown for the learned embeddings without content.
+\item Attention probabilities are averaged over images. Still demonstrates some of the behavior shown for the learned embeddings without content.
+
+\vspace{-.1in}
+\item Attention profiles do seem to shift with the query pixel $\bm q$ (see Appendix).
 \end{itemize}
 \end{frame}
 
