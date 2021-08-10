@@ -1,10 +1,11 @@
 \documentclass[9pt]{beamer}
+\usepackage{changepage}
 \usepackage[absolute,overlay]{textpos}
 \usepackage{tikz}
 \usetheme{Madrid}
 
 % Update right margin since font size is now 9pt
-\setbeamersize{text margin right=10mm} 
+\setbeamersize{text margin right=5mm} 
 
 % Adjust footline
 \makeatletter
@@ -25,6 +26,16 @@
   \vskip0pt%
 }
 \makeatother
+
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=blue,
+  urlcolor=blue,
+}
+\addtobeamertemplate{headline}{\hypersetup{linkcolor=.}}{}
+\addtobeamertemplate{footline}{\hypersetup{linkcolor=.}}{}
 
 % Itemization settings
 \usepackage{xpatch}
@@ -58,17 +69,14 @@
 \newcommand{\mb}{\bm}
 \newcommand{\mc}{\mathcal}
 
-\usepackage{hyperref}
-\hypersetup{
-  colorlinks=false,
-  linkcolor=blue,
-  filecolor=blue,
-  urlcolor=blue,
-}
 
-\title{On the Relationship between Self-Attention and Convolutional Layers}
-\subtitle{Jean-Baptiste Cordonnier, Andreas Loukas, Martin Jaggi}
-\author{Presented by Yenson Lau | Layer 6 AI}
+\title{On the Relationship between Self-Attention \& Convolutional Layers}
+\subtitle{
+    Jean-Baptiste Cordonnier, Andreas Loukas, Martin Jaggi
+}
+\author{
+    Presented by Yenson Lau | Layer 6 AI
+}
 \centering
 \date{August 11th, 2021}
 
@@ -76,11 +84,63 @@
 \maketitle
 
 
-\begin{frame}{Today's talk}
+\begin{frame}{Motivation}
+\framesubtitle{Lots of intuition available for convolutions}
+\begin{itemize} \setlength\itemsep{1.2em}
+\item Great for modeling functions on signals with {\em translational symmetries}
+
 \begin{itemize} \setlength\itemsep{1em}
-\item Attention can simultaneously attend to every word in an input sequence
-\item NN architectures using self-attention (SA) only (without convolution) can compete with SA + convolutional architectures on vision tasks
-\item Do SA layers process images in a similar manner to convolutional layers?
+    \item Equivariance / invariance: 
+    $$\textrm{Conv}(W, \mc T_{\delta} X) = \mc T_{\delta} \textrm{Conv}(W, X)$$
+    
+    \item Associativity / commutativity:
+    \begin{equation*}
+        \textrm{Conv}(W', \textrm{Conv}(W, X)) 
+            \eq \textrm{Conv}(\textrm{Conv}(W', W), X)
+            \eq \textrm{Conv}(\textrm{Conv}(W, W'), X) 
+    \end{equation*}
+
+    \item Diagonalized by the Fourier Transform
+    (\href{http://hamiltonkibbe.com/finite-impulse-response-filters-using-apples-accelerate-framework-part-iii/}{source})
+    \begin{center}
+        \includegraphics[width=.4\textwidth]{presentation/images/conv-time.png}
+        \qquad
+        \includegraphics[width=.4\textwidth]{presentation/images/conv-freq.png}
+    \end{center}
+\end{itemize}
+
+\item Great at detecting local patterns in some fixed proximity -- as long as order is preserved. Naturally a core component of deep learning models for vision tasks.
+\begin{itemize}
+    \item e.g.\ 
+    \href{http://yann.lecun.com/exdb/lenet/}{LeNet}, 
+    \href{https://papers.nips.cc/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf}{AlexNet}, 
+    \href{https://arxiv.org/abs/1512.03385}{ResNet}, etc.
+\end{itemize}
+
+\item For language tasks, however, relying on translation alone to identify patterns is insufficient.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Today's talk}
+\begin{itemize}
+\item Text does have a loose sequential component but meaning often depends on context, ordering of words change between languages, etc. 
+(\href{https://wiki.pathmind.com/attention-mechanism-memory-network}{source})
+\begin{center}
+    \includegraphics[width=.25\textwidth]{presentation/images/attention_translation_grid.png}
+    \qquad
+    \includegraphics[width=.5\textwidth]{presentation/images/semantic_dependencies.jpg}
+\end{center}
+
+\item Unlike convolutions, attention can simultaneously attend to every word in an input sequence and produces the best language models, e.g.\ 
+\href{https://papers.nips.cc/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf}{Transformer}, \href{https://arxiv.org/abs/1810.04805}{BERT}, etc.
+
+\item In fact, NN architectures using self-attention (SA) only (without convolution) can compete with SA + convolutional architectures on vision tasks.
+\begin{itemize}
+    \item \href{https://arxiv.org/abs/1906.05909}{Stand-Alone Self-Attention in Vision Models, Ramachandran et.\ al.\, 2018.}
+\end{itemize}
+
+\item Can attention be interpreted as a ``generalized convolution'', and does this interpretation provide meaningful insight into how the mechanism works?
 \end{itemize}
 \end{frame}
 
