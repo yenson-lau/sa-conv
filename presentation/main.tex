@@ -117,14 +117,14 @@
     \href{https://arxiv.org/abs/1512.03385}{ResNet}, etc.
 \end{itemize}
 
-\item For language tasks, however, relying on translation alone to identify patterns is insufficient.
+\item For language tasks, however, a ``sliding-window'' approach alone is insufficient for identifying patterns.
 \end{itemize}
 \end{frame}
 
 
-\begin{frame}{Today's talk}
+\begin{frame}{Motivation}
 \begin{itemize}
-\item Text does have a loose sequential component but meaning often depends on context, ordering of words change between languages, etc. 
+\item Text does have a loose sequential component but long-range context matters, ordering of words can change in different settings, etc. 
 (\href{https://wiki.pathmind.com/attention-mechanism-memory-network}{source})
 \begin{center}
     \includegraphics[width=.25\textwidth]{presentation/images/attention_translation_grid.png}
@@ -160,14 +160,14 @@
 \end{center}
 
 \begin{itemize}
-\item Experiments showing that the first few layers of DNNs using SA do behave similarly to the theoretical construction.
+\item Experiments showing that (arguably) the first few layers of DNNs using SA do behave similarly to the theoretical construction. Attention probabilities may possibly be interpretable from the lens of ``generalized convolution''.
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Self-Attention}
 \begin{itemize}
-\item Let $\bm X\in\bb R^{T\times D_{in}}$ be an input matrix consisting of $T$ tokens in $D_{in}$ dimensions. A self-attention layer $\mathrm{SA}:D_{in}\rightarrow D_{out}$ is expressed as
+\item Let $\bm X\in\bb R^{T\times D_{in}}$ be an input matrix consisting of $T$ tokens in $D_{in}$ dimensions. For an output token $t$, the self-attention operation $\mathrm{SA}:T\times D_{in}\rightarrow D_{out}$ is expressed as
 \begin{equation}
   \mathrm{SA}(\mb X)_{t,:} \doteq \mathrm{softmax}(\mb A_{t,:})\mb X\mb W_{val},
 \end{equation}
@@ -193,7 +193,22 @@ $$\mb W_{qry} \in \bb R^{D_{in}\times{D_k}}, \ \
 \mb W_{val} \in \bb R^{D_{in}\times{D_{out}}}.$$
 For simplicity, ignore residual connections, normalization or constant factors.
 
-\vspace{.15in}
+\item In practice it is beneficial to replicate the SA mechanism into multiple heads, by concatenating the output of $N_h$ heads of output dimension $D_h$ and projecting it to dimension $D_{out}$.
+\begin{equation}
+\mathrm{MHSA}(\mb X) \doteq \mathrm{hcat}_{h\in[N_h]}\big[\mathrm{SA}_h(\mb X)\big]\mb W_{out} + \mb b_{out}. \label{mhsa}
+\end{equation}
+Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $\bm  b_{out}\in\bb R^{D_{out}}$ is a bias term.
+
+\begin{center}
+    \includegraphics[width=.7\textwidth]{images/mhsa.png}
+\end{center}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Positional Encoding}
+\begin{itemize}
+
 \item Note that $\bm A$ is {\em permutation equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the token scores in $\bm A$. {\em This is not desired behavior.}
 \begin{itemize}
     \item e.g. "the cat ate the fish" is very different from "the fish ate the cat"
@@ -205,6 +220,9 @@ For simplicity, ignore residual connections, normalization or constant factors.
 A \doteq (\mb X + \mb P)\mb W_{qry}\mb W_{key}^T (\mb X + \mb P)^T,
 \end{equation}
 where the encoding matrix $\bm P$ has size $T\times D_{in}$.
+\begin{itemize}
+    \item A well-known example for NLP is sinusoidal positional encoding.
+\end{itemize}
 \end{itemize}
 \end{frame}
 
@@ -212,7 +230,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
 \newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
 \begin{frame}{Relative positional encoding}
 \begin{itemize}
-\item In {\em absolute encoding}, a fixed or learned vector $\bm P_{t,:}$ is assigned to each token $t$. Therefore, for a query token $q$ (the token to compute the representation of) and key token $k$ (the pixel we are attending to),
+\item Writing out the positional encoding for a pair of query (the token to compute the representation of) and key tokens (the pixel we are attending to) $q, k$,
 \begin{align}
     \mb A^{abs}_{q, k} 
         \ &=\ (\mb X_{q,:} + \mb P_{q,:})\WW(\mb X_{q,:} + \mb P_{q,:})^T 
@@ -221,7 +239,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
         \\ &\qquad +\ \mb P_{q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{q,:}\WW\mb P^T_{k,:} \nonumber 
 \end{align}
 
-\item \emph{Relative positional encoding} instead considers the positional difference between the query and key tokens:
+\item Absolute positional encoding is too strong. \emph{Relative positional encoding} instead considers the positional difference between the query and key tokens:
 \vspace{-.05in}
 \begin{align}
     \mb A^{rel}_{q, k} &= 
@@ -233,28 +251,12 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
 \end{align}
 \vspace{-.18in}
 \begin{itemize}
-    \item The learnable vectors $\bm u$, $\bm v$ are unique for each head 
+    \item The (fixed or learned) vectors $\bm u$, $\bm v$ are unique for each head 
     \item The relative positional encoding $\bm r_{\delta} \in \bb R^{D_p}$ depends only on the shift $\delta \doteq k -q$, and is shared by all layers and heads.
     \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
 \end{itemize}
 
 \item The attention scores are now {\em translation equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}{Multi-Head Self-Attention (MHSA)}
-\begin{itemize}
-\item In practice it is beneficial to replicate the SA mechanism into multiple heads, by concatenating the output of $N_h$ heads of output dimension $D_h$ and projecting it to dimension $D_{out}$.
-\begin{equation}
-\mathrm{MHSA}(\mb X) \doteq \mathrm{hcat}_{h\in[N_h]}\big[\mathrm{SA}_h(\mb X)\big]\mb W_{out} + \mb b_{out}. \label{mhsa}
-\end{equation}
-Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $\bm  b_{out}\in\bb R^{D_{out}}$ is a bias term.
-
-\vspace{.2in}
-\begin{center}
-    \includegraphics[width=.7\textwidth]{images/mhsa.png}
-\end{center}
 \end{itemize}
 \end{frame}
 
@@ -270,7 +272,7 @@ Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $
 \begin{equation}
 \mathrm{SA}(\mb A)_{\mb q, :} \ = \ \sum_{\mb k} \mathrm{softmax}(\mb A_{\mb q, :})_{\mb k}\ \mb X_{\mb k, :} \ \mb W_{val},
 \end{equation}
-and relative positional encoding retains the same form as Equation \eqref{relposenc}. Similarly MHSA retains the same form as Equation \eqref{mhsa}.
+and MHSA retains the same form as Equation \eqref{mhsa}. Similarly, relative positional encoding retains the same form as Equation \eqref{relposenc} .
 \end{itemize}
 \end{frame}
 
@@ -282,14 +284,16 @@ and relative positional encoding retains the same form as Equation \eqref{relpos
 \begin{itemize}
 \item Given an image tensor $\bm X \in \bb R^{W\times H\times D_{in}}$ and kernel tensor $\bm W \in \bb R^{K\times K \times D_{in} \times D_{out}}$,
 \begin{equation}
-\mathrm{Conv}(\mb X)_{i,j,:} \ \doteq \ \sum_{(\delta_1, \delta_2) \in \Delta_K} \mb X_{i-\delta_1, j-\delta_2, :} \mb W_{\delta_1, \delta_2, :, :} + \mb b \ \ \in \ \mathbb R^{D_{out}},
+    \mathrm{Conv}(\mb X)_{i,j,:} \ \doteq \ \sum_{(\delta_1, \delta_2) \in \Delta_K} 
+    \mb X_{i-\delta_1, j-\delta_2, :}\ \mb W_{\delta_1, \delta_2, :, :} 
+    + \mb b \ \ \in \ \mathbb R^{D_{out}},
 \end{equation}
 where
 $$\Delta_K \ \doteq \ \sqbrkt{-\ktwo, \dots, \ktwo} \times \sqbrkt{-\ktwo, \dots, \ktwo}$$
 is the set of all shifts represented by a $K\times K$ kernel.
 
 \vspace{.1in}
-\item We depart from the original notation slightly by using the {\em unflipped} convolution. In the paper, the summand is flipped to $\bm X_{i+\delta_1, i+\delta_2,:} \bm W_{\delta_1, \delta_2,:,:}$. The theorem in the paper is not changed by this.
+\item We depart from the original notation slightly by using the {\em unflipped} convolution. In the paper, the summand is flipped to $\bm X_{i+\delta_1, j+\delta_2,:} \bm W_{\delta_1, \delta_2,:,:}$. The theorem in the paper is not changed by this.
 \end{itemize}
 \end{frame}
 
@@ -329,7 +333,7 @@ Then for any convolutional layer with a $K\times K$ kernel and $D_{out}$ output 
         \underbrace{\mb W_{val}^{(h)}\ \mb W_{out}^{(h)}}_{\mb W^{(h)}}\ .
     \vspace{-.1in}
 \end{equation}
-Here $\bm W_{val}^{(h)} \in \bb R^{D_{in}\times D_h}$ is the value matrix for head $h$, or in MATLAB notation,
+Here $\bm W_{out}^{(h)} \in \bb R^{D_{h}\times D_{out}}$ is the output matrix for head $h$, or in MATLAB notation,
 $$\bm W_{out}^{(h)} = \bm W[(h-1)*D_h+1 : hD_h\ , \ :\ ] \ \ \in\ \ \bb R^{D_h\times D_{out}}.$$
 \end{itemize}
 \end{frame}
@@ -348,7 +352,7 @@ $$\bm W_{out}^{(h)} = \bm W[(h-1)*D_h+1 : hD_h\ , \ :\ ] \ \ \in\ \ \bb R^{D_h\t
 \end{equation}
 The summand $\sum_{\mb k} \mathrm{softmax}(\mb A^{(h)}\row {\mb q})_{\mb k}\ \mb X\row{\mb k}$ is a weighted average on the rows of $\bm X$. 
 
-\item Applying the assumption from Equation \eqref{lemma1_assumption}, each of the softmax weights pick out a single row $\bm k = \bm q - \bm f(h)$:
+\item Applying the assumption from Equation \eqref{lemma1_assumption}, each of the softmax weights pick out a single pixel $\bm k = \bm q - \bm f(h)$:
 \begin{equation}
     \mathrm{MHSA}(\mb X)\row {\mb q} = \mb b_{out} + 
         \sum_{h\in[N_h]}  \mb X\row{\mb q - \mb f(h)} \mb W^{(h)} .
@@ -366,7 +370,7 @@ If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts us
 
 
 \begin{frame}{Self-Attention as a Convolutional Layer}
-\framesubtitle{Lemma 1}
+\framesubtitle{Lemma 1: Summary}
 \begin{itemize}
 \item Lemma 1 says that, with the right choice of relative positional encoding (and a very restricted set of attention parameters), {\em a MHSA layer is exactly equivalent to a convolutional layer}.
 
@@ -383,7 +387,7 @@ If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts us
 \begin{frame}{Self-Attention as a Convolutional Layer}
 \framesubtitle{Lemma 2}
 \begin{itemize}
-\item \textbf{Lemma 2.} {\em There exists a relative encoding scheme $\{\bm r_{\bm \delta} \in \bb R^{D_p}\}_{\bm \delta\in\bb Z^2}$ with $D_p\geq 3$ and parameters $\bm W_{qry}$, $\bm W_{key}$, $\hat{\bm X}_{key}$, $\bm u$ with $D_p\leq D_k$ such that, for every $\bm\varDelta \in \Delta_K$ there exists some vector $\bm v(\bm\varDelta)$ that yields $\mathrm{softmax}(\bm A_{\bm q,:})_{\bm k}=1$ if $\bm k - \bm q = \bm\varDelta$, and zero otherwise.}
+\item \textbf{Lemma 2.} {\em There exists a relative encoding scheme $\{\bm r_{\bm \delta} \in \bb R^{D_p}\}_{\bm \delta\in\bb Z^2}$ with $D_p\geq 3$ and parameters $\bm W_{qry}$, $\bm W_{key}$, $\hat{\bm X}_{key}$, $\bm u$ with $D_p\leq D_k$ such that, for every $\bm\tau \in \Delta_K$ there exists some vector $\bm v(\bm\tau)$ that yields $\mathrm{softmax}(\bm A_{\bm q,:})_{\bm k}=1$ if $\bm k - \bm q = \bm\tau$, and zero otherwise.}
 
 \vspace{.1in}
 \item \textit{Proof of Lemma 2.} Start with the relative positional encoding of Equation \eqref{relposenc}:
@@ -408,52 +412,52 @@ This leaves only the final term. Setting $\hat{\bm W}_{key} = [\ \bm I_{D_p}\ ; 
 \newcommand{\sqnorm}[1]{\Vert#1\Vert^2}
 \newcommand{\expalpha}[1]{e^{-\alpha#1}}
 \newcommand{\limalpha}{\lim_{\alpha\rightarrow\infty}}
-\newcommand{\vDelta}{\varDelta}
+\newcommand{\vDelta}{\tau}
 \begin{frame}{Self-Attention as a Convolutional Layer}
 \framesubtitle{Lemma 2}
 \begin{itemize}
 \item \textit{Proof of Lemma 2 (cont).} Recall that $\bm \delta \doteq \bm k - \bm q$. Now suppose some $\bm v, \bm r_{\bm \delta}$ could be found such that
 \begin{equation}
-    \mb A_{\mb q, \mb k} = -\alpha(\sqnorm{\bm{\delta - \varDelta}} + c) 
+    \mb A_{\mb q, \mb k} = -\alpha(\sqnorm{\bm{\delta - \tau}} + c) 
     \label{lemma2_attnreq}
 \end{equation}
-so that the maximum score $-\alpha c$ is achieved when $\bm\delta = \bm\varDelta$, then
+so that the maximum score $-\alpha c$ is achieved when $\bm\delta = \bm\tau$, then
 \begin{align*}
     \limalpha \text{softmax}(\mb A_{\mb q, :})_{\mb k} &\eq 
-        \limalpha\frac{\expalpha{(\sqnorm{\bm{\delta-\varDelta}}+c)}}{
+        \limalpha\frac{\expalpha{(\sqnorm{\bm{\delta-\tau}}+c)}}{
             \sum_{\bm\delta'\in\Delta_K}
-            \expalpha{(\sqnorm{\bm{\delta'-\varDelta}}+c)}
-        } \\ &\eq \frac{1_{\bm\delta=\bm\varDelta}}{
+            \expalpha{(\sqnorm{\bm{\delta'-\tau}}+c)}
+        } \\ &\eq \frac{1_{\bm\delta=\bm\tau}}{
             1 + \limalpha\sum_{\bm\delta'\neq \bm\delta}
-            \expalpha{\sqnorm{\bm{\delta'-\varDelta}}}
-        } = 1_{\bm\delta=\bm\varDelta}.
+            \expalpha{\sqnorm{\bm{\delta'-\tau}}}
+        } = 1_{\bm\delta=\bm\tau}.
 \end{align*}
 
-\item Choosing $\bm v_{1:D_p} = -\alpha(1, -2\varDelta_1, -2\varDelta_2)$ and $\bm r_{\bm \delta} = (\Vert\bm \delta\Vert^2, \delta_1, \delta_2)$, yields
+\item Choosing $\bm v_{1:D_p} = -\alpha(1, -2\tau_1, -2\tau_2)$ and $\bm r_{\bm \delta} = (\Vert\bm \delta\Vert^2, \delta_1, \delta_2)$, yields
 \begin{align*}
     \mb A_{\mb q, \bm k} &= 
         \mb v_{1:D_p}^T\, \mb r_{\bm \delta}
         \\ &= -\alpha(\sqnorm{\bm\delta} -2\vDelta_1\delta_1-2\vDelta_2\delta_2) 
         \\ &= -\alpha(\sqnorm{\bm\delta-\bm\vDelta} - \sqnorm{\bm\vDelta}).
 \end{align*}
-Setting $c=-\sqnorm{\bm\varDelta}$ recovers Equation \eqref{lemma2_attnreq} and completes the proof. \qed
+Setting $c=-\sqnorm{\bm\tau}$ recovers Equation \eqref{lemma2_attnreq} and completes the proof. \qed
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Self-Attention as a Convolutional Layer}
-\framesubtitle{Lemma 2}
+\framesubtitle{Lemma 2: Summary}
 \begin{itemize}
 \item The encoding scheme satisfying Lemma 2 is a {\em quadratic encoding scheme}, and is achieved by setting
 \begin{align}
-    \mb v\brac h &\doteq -\alpha\brac h 
-        (1, -2\varDelta_1\brac h, -2\varDelta_2\brac h), \nonumber \\
+    \mb v_{1:D_p}\brac h &\doteq -\alpha\brac h 
+        (1, -2\tau_1\brac h, -2\tau_2\brac h), \nonumber \\
     \mb r_{\bm \delta} &\doteq (\Vert\bm\delta\Vert^2,\ \delta_1,\ \delta_2), 
     \label{quad_encoding} \\
     \mb W_{qry} &= \mb W_{key} \doteq \bm 0, \nonumber \\
-    \hat{\mb W}_{key} &\doteq \mb I. \nonumber
+    \hat{\mb W}_{key} &\doteq [\ \bm I_{D_p}\ ; \ \bm 0\ ]. \nonumber
 \end{align}
-Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ is fixed and expresses the relative shift between query and key pixels.
+Here the learned parameters $\bm\tau^{(h)} = (\tau_1^{(h)}, \tau_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ and therefore $\bm r_{\bm \delta}$ is fixed and expresses the relative shift between query and key pixels.
 
 \item Although the proof requires $\alpha\rightarrow\infty$ to satisfy the assumption \eqref{lemma1_assumption} of Lemma 1, finite precision arithmetic performs hard attention with sufficiently large enough $\alpha$. E.g. for \texttt{Float32}, set $\alpha\geq46$. 
 
@@ -467,11 +471,11 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
 \item \textbf{Baseline.} Standard ResNet18 on CIFAR-10
 
 \vspace{.02in}
-\item \textbf{Model.}
+\item \textbf{Challenger models.}
 \begin{itemize}
     \item 6 MHSA layers. Each layer consists of a MHSA step, followed by dense, dropout and LayerNorm sublayers.
     \item Use 2x2 invertible downsampling to reduce image size (attention coefficients scale quadratically to image size)
-    \item Fixed size representation of input image is the average pooling of the last layer representations, and fed to a linear classifier
+    \item The last layer representation is average pooled and fed to a linear classifier
 \end{itemize}
 
 \vspace{.02in}
@@ -485,8 +489,8 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
     \vspace{-.12in}
 \end{equation*}
 \begin{itemize}
-    \item \textbf{SA with quadratic embedding:}  Retain final term only and fix the variables using Equation \eqref{quad_encoding}. The attention widths $\alpha^{(h)}$ and centers $\varDelta^{(h)}$ are still learnt.
-    \item \textbf{SA with learned embedding:} Retain final term only but learn $\mathbf v,\ \hat{\mathbf W}_{key},\ \mathbf r_{\bm \delta}$, with $D_p=D_{out}=400$. Set $D_h=D_{out}$.
+    \item \textbf{SA with quadratic embedding:}  Retain final term only and fix the variables using Equation \eqref{quad_encoding}. The attention widths $\alpha^{(h)}$ and centers $\tau^{(h)}$ are still learnt.
+    \item \textbf{SA with learned embedding:} Retain final term only but learn $\mathbf v,\, \hat{\mathbf W}_{key},\, \mathbf r_{\bm \delta}$, with $D_p=D_{out}=400$. Set $D_h=D_{out}$.
     \item \textbf{SA with content-based attention:} All terms retained (might actually be just first two terms) and all variables learnable. Same dimensions as above.
 \end{itemize}
 \end{itemize}
@@ -518,18 +522,18 @@ Here the learned parameters $\bm\varDelta^{(h)} = (\varDelta_1^{(h)}, \varDelta_
         = \bm 1_{\bm f(h) = \bm q - \bm k}, 
         \quad \forall h.
 \end{equation*}
-If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\varDelta\in\Delta_K$ yields 
+If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\tau\in\Delta_K$ yields 
 \begin{equation*}
-    \mathrm{softmax}(\mb A^{\bm\varDelta}_{\mb q,:})_{\mb k} 
-        = \bm 1_{\bm \varDelta = \bm q - \bm k}, 
-        \quad \forall \bm\varDelta.
+    \mathrm{softmax}(\mb A^{\bm\tau}_{\mb q,:})_{\mb k} 
+        = \bm 1_{\bm \tau = \bm q - \bm k}, 
+        \quad \forall \bm\tau.
 \end{equation*}
 
 \item MHSA expresses a single convolution operation when attention probabilities are all elements of a {\em translation group}. For instance, this would also suffice:
 \begin{equation*}
-    \mathrm{softmax}(\mb A^{\bm\varDelta}_{\mb q,:})_{\mb k} 
-        = \tfrac1\tau\ \bm 1_{\abs{\bm \varDelta - (\bm q - \bm k)}\leq\tau},
-        \quad \forall \bm\varDelta.
+    \mathrm{softmax}(\mb A^{\bm\tau}_{\mb q,:})_{\mb k} 
+        \propto \bm 1_{\abs{(\bm q - \bm k)-\bm \tau}\leq R},
+        \quad \forall \bm\tau.
 \end{equation*}
 
 \item Alternatively, if we remove some of the shifts from $\Delta_K$, the heads are still elements of a translation group and we just end up with {\em sparse} convolution.
@@ -558,7 +562,7 @@ If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\varDe
 \end{frame}
 
 \begin{frame}{Do Self-Attention Layers Actually Learn Convolutions? Maybe.}
-\framesubtitle{Quadratic encoding}
+\framesubtitle{Quadratic / non-isotropic Guassian encoding}
 \begin{itemize}
 \item $N_h=16$ heads. Similar to behavior with 9 heads, but now lower layers have groups of heads with small widths + a few heads with widely varying widths.
 \begin{center}
