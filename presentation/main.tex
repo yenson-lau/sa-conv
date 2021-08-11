@@ -160,7 +160,9 @@
 \end{center}
 
 \begin{itemize}
-\item Experiments showing that (arguably) the first few layers of DNNs using SA do behave similarly to the theoretical construction. Attention probabilities may possibly be interpretable from the lens of ``generalized convolution''.
+\item Experiments showing that SA behaves (somewhat) similarly to the theoretical construction for vision tasks. 
+
+\item Attention probabilities possibly interpretable as some form of ``generalized convolution''.
 \end{itemize}
 \end{frame}
 
@@ -193,7 +195,7 @@ $$\mb W_{qry} \in \bb R^{D_{in}\times{D_k}}, \ \
 \mb W_{val} \in \bb R^{D_{in}\times{D_{out}}}.$$
 For simplicity, ignore residual connections, normalization or constant factors.
 
-\item In practice it is beneficial to replicate the SA mechanism into multiple heads, by concatenating the output of $N_h$ heads of output dimension $D_h$ and projecting it to dimension $D_{out}$.
+\item Beneficial to replicate the SA mechanism into multiple heads: concatenate the output of $N_h$ heads of size $D_h$ and project it to dimension $D_{out}$.
 \begin{equation}
 \mathrm{MHSA}(\mb X) \doteq \mathrm{hcat}_{h\in[N_h]}\big[\mathrm{SA}_h(\mb X)\big]\mb W_{out} + \mb b_{out}. \label{mhsa}
 \end{equation}
@@ -209,19 +211,19 @@ Here $\bm W_{out}\in\bb R^{N_hD_h\times D_{out}}$ is the projection matrix and $
 \begin{frame}{Positional Encoding}
 \begin{itemize}
 
-\item Note that $\bm A$ is {\em permutation equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the token scores in $\bm A$. {\em This is not desired behavior.}
+\item $\bm A$ is {\em permutation equivariant} -- shuffling the order of the tokens (rows) in $\bm X$ shuffles the scores in $\bm A$. {\em This is not desired behavior.}
 \begin{itemize}
     \item e.g. "the cat ate the fish" is very different from "the fish ate the cat"
 \end{itemize}
 
 \vspace{.1in}
-\item To overcome this, we can add a (fixed or learned) {\em positional encoding} $\bm P_{t,:}$, for each token in the sequence, to the input matrix for computing attention scores
+\item Overcome this by adding a (fixed or learned) {\em positional encoding} $\bm P_{t,:}$, for each token in the sequence when computing attention scores
 \begin{equation}
-A \doteq (\mb X + \mb P)\mb W_{qry}\mb W_{key}^T (\mb X + \mb P)^T,
+A \doteq (\mb X + \mb P)\mb W_{qry}\mb W_{key}^T (\mb X + \mb P)^T.
 \end{equation}
-where the encoding matrix $\bm P$ has size $T\times D_{in}$.
+The encoding matrix $\bm P$ has size $T\times D_{in}$.
 \begin{itemize}
-    \item A well-known example for NLP is sinusoidal positional encoding.
+    \item e.g.\ sinusoidal positional encoding.
 \end{itemize}
 \end{itemize}
 \end{frame}
@@ -229,8 +231,8 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
 
 \newcommand{\WW}{ \mb W_{qry}\mb W_{key}^T }
 \begin{frame}{Relative positional encoding}
-\begin{itemize}
-\item Writing out the positional encoding for a pair of query (the token to compute the representation of) and key tokens (the pixel we are attending to) $q, k$,
+\begin{itemize} \setlength\itemsep{1.2em}
+\item For a pair of query (the token to compute the representation of) and key tokens (the pixel we are attending to) $q, k$, we can write this out as
 \begin{align}
     \mb A^{abs}_{q, k} 
         \ &=\ (\mb X_{q,:} + \mb P_{q,:})\WW(\mb X_{q,:} + \mb P_{q,:})^T 
@@ -239,8 +241,7 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
         \\ &\qquad +\ \mb P_{q,:}\WW\mb X^T_{k,:} \ +\ \mb P_{q,:}\WW\mb P^T_{k,:} \nonumber 
 \end{align}
 
-\item Absolute positional encoding is too strong. \emph{Relative positional encoding} instead considers the positional difference between the query and key tokens:
-\vspace{-.05in}
+\item \emph{Relative positional encoding} is less restrictive and instead considers the positional difference between the query and key tokens:
 \begin{align}
     \mb A^{rel}_{q, k} &= 
         \mb X_{q,:}^T \WW \mb X_{k,:}
@@ -249,14 +250,14 @@ where the encoding matrix $\bm P$ has size $T\times D_{in}$.
         + \mb v^T \hat{\mb W}_{key} \mb r_{\delta}.
     \label{relposenc}
 \end{align}
-\vspace{-.18in}
+\vspace{-.15in}
 \begin{itemize}
-    \item The (fixed or learned) vectors $\bm u$, $\bm v$ are unique for each head 
-    \item The relative positional encoding $\bm r_{\delta} \in \bb R^{D_p}$ depends only on the shift $\delta \doteq k -q$, and is shared by all layers and heads.
+    \item $\bm u$, $\bm v$: fixed or learned, unique for each head 
+    \item $\bm r_{\delta} \in \bb R^{D_p}$: depends only on the shift $\delta \doteq k -q$, shared by all layers and heads.
     \item Key weights are split into $\bm W_{key}$ for the input and $\hat{\bm W}_{key}$ for positional encoding.
 \end{itemize}
 
-\item The attention scores are now {\em translation equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
+\item Attention scores are now {\em translation equivariant} rather than permutation equivariant. This is the desired behavior for convolutional / vision tasks.
 \end{itemize}
 \end{frame}
 
@@ -293,7 +294,7 @@ $$\Delta_K \ \doteq \ \sqbrkt{-\ktwo, \dots, \ktwo} \times \sqbrkt{-\ktwo, \dots
 is the set of all shifts represented by a $K\times K$ kernel.
 
 \vspace{.1in}
-\item We depart from the original notation slightly by using the {\em unflipped} convolution. In the paper, the summand is flipped to $\bm X_{i+\delta_1, j+\delta_2,:} \bm W_{\delta_1, \delta_2,:,:}$. The theorem in the paper is not changed by this.
+\item In the paper, the convolution is flipped so the summand is $\bm X_{i+\delta_1, j+\delta_2,:} \bm W_{\delta_1, \delta_2,:,:}$. Does not affect the outcome of the theorem.
 \end{itemize}
 \end{frame}
 
@@ -340,6 +341,7 @@ $$\bm W_{out}^{(h)} = \bm W[(h-1)*D_h+1 : hD_h\ , \ :\ ] \ \ \in\ \ \bb R^{D_h\t
 
 
 \newcommand{\row}[1]{_{#1,:}}
+\newcommand{\brac}[1]{^{(#1)}}
 \begin{frame}{Self-Attention as a Convolutional Layer}
 \framesubtitle{Lemma 1}
 \begin{itemize}
@@ -358,7 +360,7 @@ The summand $\sum_{\mb k} \mathrm{softmax}(\mb A^{(h)}\row {\mb q})_{\mb k}\ \mb
         \sum_{h\in[N_h]}  \mb X\row{\mb q - \mb f(h)} \mb W^{(h)} .
 \end{equation}
 
-If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts using $h\in[N_h]$, i.e. $\bm f([N_h]) = \Delta_K$. Therefore we can rewrite the expression as
+Set $K=\sqrt{N_h}$ and index all each shift using one $h\in[N_h]$, i.e.\ $\bm f([N_h]) = \Delta_K$. Then setting $\bm W_{\bm f(h),:,:} = \bm W\brac h$ we get
 \begin{equation}
     \mathrm{MHSA}(\mb X)\row {\mb q} = \mb b_{out} + 
         \sum_{h\in[N_h]}  \mb X\row{\mb q - \mb f(h)} \mb W_{\mb f(h), :, :} 
@@ -383,7 +385,6 @@ If we set $K=\sqrt{N_h}$, then it is clearly possible to index all the shifts us
 \end{frame}
 
 
-\newcommand{\brac}[1]{^{(#1)}}
 \begin{frame}{Self-Attention as a Convolutional Layer}
 \framesubtitle{Lemma 2}
 \begin{itemize}
@@ -457,7 +458,7 @@ Setting $c=-\sqnorm{\bm\tau}$ recovers Equation \eqref{lemma2_attnreq} and compl
     \mb W_{qry} &= \mb W_{key} \doteq \bm 0, \nonumber \\
     \hat{\mb W}_{key} &\doteq [\ \bm I_{D_p}\ ; \ \bm 0\ ]. \nonumber
 \end{align}
-Here the learned parameters $\bm\tau^{(h)} = (\tau_1^{(h)}, \tau_2^{(h)})$ and $\alpha^{(h)}$ determine the center and width of attention of each head, and $\bm\delta = (\delta_1, \delta_2)$ and therefore $\bm r_{\bm \delta}$ is fixed and expresses the relative shift between query and key pixels.
+The learned parameters $\bm\tau^{(h)} = (\tau_1^{(h)}, \tau_2^{(h)})$ and $\alpha^{(h)}$ denote the center and width of attention of each head. $\bm\delta = (\delta_1, \delta_2)$ and therefore $\bm r_{\bm \delta}$ is fixed and expresses the relative shift between query and key pixels.
 
 \item Although the proof requires $\alpha\rightarrow\infty$ to satisfy the assumption \eqref{lemma1_assumption} of Lemma 1, finite precision arithmetic performs hard attention with sufficiently large enough $\alpha$. E.g. for \texttt{Float32}, set $\alpha\geq46$. 
 
@@ -536,11 +537,11 @@ If $N_h=\abs{\Delta_K}$, mapping each head to a single shift $\bm f(h)=\bm\tau\i
         \quad \forall \bm\tau.
 \end{equation*}
 
-\item Alternatively, if we remove some of the shifts from $\Delta_K$, the heads are still elements of a translation group and we just end up with {\em sparse} convolution.
+\item Expresses ``sparse convolution'' if we remove some pixels from being attended to in $\Delta_K$; the heads are still elements of a translation group.
 
-\item And if there were multiple distribution profiles in the attention probabilities, then MHSA can be seen as expressing a {\em mixture} of convolution operators.
+\item Expresses ``mixture of convolutions'' if there were multiple distribution profiles in the attention probabilities.
 
-\item \textbf{Takeaway:} \emph{It's difficult to judge whether a MHSA layer has a preference for learning convolutional operators or not, especially when $N_h$ is small.}
+\item \textbf{Takeaway:} \emph{It's difficult to judge whether a MHSA layer has a preference for learning convolutional operators or not.}
 \end{itemize}
 \end{frame}
 
